@@ -1,0 +1,29 @@
+##### Types #####
+type AuthenticatedUser {
+  firstName: String
+  lastName: String
+  email: String
+  token: String
+}
+
+##### Queries #####
+type Query {
+  healthCheck(password: String!): [String]
+  version: String
+}
+
+##### Mutations #####
+type Mutation {
+  UserSignup(signupInput: SignUpInput!): String
+  UserLogin(email: String, password: String): AuthenticatedUser
+  UserForgotPassword(email: String): String
+  UserResetPassword(code: String, newPassword: String): String
+}
+
+##### Inputs #####
+input SignUpInput {
+  firstName: String
+  lastName: String
+  email: String
+  password: String
+}

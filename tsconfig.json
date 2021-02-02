@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "module": "es6",
+    "target": "es5",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "types": ["node"],
+    // directory related settings
+    "outDir": "./dist",
+    "rootDir": ".",
+    "baseUrl": "src",
+    "paths": { "src": ["src/*"] },
+    // js related options
+    "allowJs": true,
+    "checkJs": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
+  },
+  "exclude": ["node_modules", "**/*.test.ts"],
+  "include": ["src"]
+}

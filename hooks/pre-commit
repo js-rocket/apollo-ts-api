@@ -1,0 +1,10 @@
+#!/bin/sh
+
+yarn pretty
+if [ $? -ne 0 ]; then exit $?; fi
+
+yarn lint
+if [ $? -ne 0 ]; then exit $?; fi
+
+CI=true yarn test
+if [ $? -ne 0 ]; then exit $?; fi

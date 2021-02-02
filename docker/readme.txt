@@ -1,0 +1,1 @@
+This folder should contain docker related data and configuration files
