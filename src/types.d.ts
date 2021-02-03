@@ -1,7 +1,7 @@
 // graphql schema file
 declare module '*.graphql' {
-  const content: string;
-  export default content;
+  const graphql_schema_content: string;
+  export = graphql_schema_content;
 }
 
 // Generic object type for quick conversions from js to ts
@@ -11,8 +11,8 @@ type _obj = { [key: string]: any };
 
 declare module 'pg' {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const content: any;
-  export default content;
+  const pg_module: any;
+  export = pg_module;
 }
 
 declare module 'chance' {

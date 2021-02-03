@@ -63,9 +63,9 @@ const options = {
 };
 
 const getterMethods = {
-  fullName() {
-    return [this.first_name, this.last_name].join(' ');
-  },
+  // fullName(this: ModelCtor<UserDetailInstance>): string {
+  //   return [this.firstName, this.lastName].join(' ');
+  // },
 };
 
 const associate = (db: _obj) => {

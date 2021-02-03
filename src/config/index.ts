@@ -6,7 +6,7 @@
 const postgresURL = () => {
   const DB_STRING =
     process.env.DATABASE_URL || 'postgres://User_name:Password_value@Host_name:5432/Database_name';
-  const dbfields = DB_STRING.match(/postgres:\/\/(.*):(.*)@(.*):(.*)\/(.*)/);
+  const dbfields = <string[]>DB_STRING.match(/postgres:\/\/(.*):(.*)@(.*):(.*)\/(.*)/);
   return {
     username: dbfields[1],
     password: decodeURIComponent(dbfields[2]), // if required, use encodeURIcomponent on the password

@@ -9,6 +9,9 @@ import { sendEmail } from 'src/services/email';
 
 const Query = {
   // eslint-disable-next-line no-unused-vars,@typescript-eslint/no-unused-vars
+  test: (parent: _obj, args: _obj, context: _obj, info: _obj): string => 'OK',
+
+  // eslint-disable-next-line no-unused-vars,@typescript-eslint/no-unused-vars
   version: (parent: _obj, args: _obj, context: _obj, info: _obj): string => '1.0.0',
 
   // eslint-disable-next-line no-unused-vars,@typescript-eslint/no-unused-vars

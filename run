@@ -56,10 +56,10 @@ app_init() {
 
   # Add webpack, babel transpiler, eslint, prettier and jest/supertest
   yarn add -D webpack webpack-cli webpack-node-externals raw-loader \
-    typescript ts-loader @types/node @types/validator \
+    typescript ts-loader @types/node @types/validator @types/jest \
     eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin \
     prettier eslint-plugin-prettier eslint-config-prettier \
-    jest supertest ts-jest \
+    jest ts-jest supertest @types/supertest \
     sequelize-cli
   
   # yarn add -D webpack webpack-cli webpack-node-externals \
