@@ -1,0 +1,94 @@
+#!/bin/sh
+NET_NAME=bridge1
+DBAPP_NAME=app_db
+
+auto_create_bridge() {
+  docker network ls | grep "$NET_NAME" > /dev/null
+  if [ ! $? = 0 ]; then docker network create bridge1; fi
+}
+
+app_set_environment() {
+  NODE_SET_ENV=$(echo "print=console.log; dbfields = process.env.DATABASE_URL.match(/postgres:\/\/(.*):(.*)@(.*):(.*)\/(.*)/);
+  print('DB_USER='+dbfields[1]);
+  print('DB_PASSWORD=' + decodeURIComponent(dbfields[2]) );
+  print('DB_HOST=' + dbfields[3]);
+  print('DB_PORT=' + dbfields[4]);
+  print('DB_NAME=' + dbfields[5]);
+" | node -)
+  eval "$NODE_SET_ENV"
+  NODE_SET_ENV=''
+}
+
+
+docker_dbstart() {
+  if [ ! -d $PWD/docker/data ]; then mkdir $PWD/docker/data; fi
+
+  # docker_dbstop
+  docker run -dit --rm \
+  -p $DB_PORT:5432 \
+  --net $NET_NAME \
+  -v $PWD/docker/data:/var/lib/postgresql \
+  -e POSTGRES_USER=$DB_USER \
+  -e POSTGRES_PASSWORD=$DB_PASSWORD \
+  --name="$DBAPP_NAME" postgres:12-alpine
+}
+
+
+docker_dbstop() {
+  docker stop -t 2 $DBAPP_NAME
+}
+
+
+# Create database and user according to .env file values
+docker_dbinit() {
+  echo "CREATING: $DB_NAME"
+  docker exec $DBAPP_NAME /usr/local/bin/psql \
+    "postgresql://$DB_USER:$DB_PASSWORD@localhost/postgres" \
+    -c "CREATE DATABASE $DB_NAME;"
+
+  # INIT_SCRIPT="CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
+  # GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
+
+  # docker exec $DBAPP_NAME /usr/local/bin/psql \
+  #   "postgresql://$DB_USER:$DB_PASSWORD@localhost/$DB_NAME" \
+  #   -c "$INIT_SCRIPT"
+}
+
+
+docker_dbimport() {
+  echo "IMPORTING: $1"
+  docker exec -i $DBAPP_NAME /usr/local/bin/psql \
+    "postgresql://$DB_USER:$DB_PASSWORD@localhost/$DB_NAME" < $1
+}
+
+docker_dbdump() {
+  echo "DUMPING: $1"
+  docker exec -i $DBAPP_NAME /usr/local/bin/pg_dump \
+    "postgresql://$DB_USER:$DB_PASSWORD@localhost/$DB_NAME" \
+    --exclude-table sequelize_seed --exclude-table sequelize_migration > dump.sql
+}
+
+app_sequelize() {
+  yarn sequelize --env dev $*
+}
+
+
+# import environment variables for local testing
+set -a; if [ -f '.env' ]; then . ./.env; fi; app_set_environment; set +a
+
+auto_create_bridge
+
+# database commands
+if [ "$1" = "start" ]; then auto_create_bridge; docker_dbstart; exit; fi
+if [ "$1" = "stop" ]; then docker_dbstop; exit; fi
+
+if [ "$1" = "init" ]; then auto_create_bridge; docker_dbinit $2; exit; fi
+if [ "$1" = "import" ]; then auto_create_bridge; docker_dbimport $2; exit; fi
+
+if [ "$1" = "dump" ]; then auto_create_bridge; shift 1; docker_dbdump $*; exit; fi
+
+if [ "$1" = "sq" ]; then shift 1; app_sequelize $*; exit; fi
+
+echo "Command not found"
+
+

@@ -1,12 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 APP_NAME=myapi
 NET_NAME=bridge1
-
-# Database container details - leave DBAPP_NAME if you want to run your own database
-DBAPP_NAME=${APP_NAME}_db
-DB_PORT=5432
-DBUSER_NAME=dev_user
-DBUSER_PASS=devpassword837439
 
 # Possible values are: heroku, aws, vercel, gcp
 DEPLOY_TARGET=aws
@@ -48,7 +42,7 @@ app_init() {
   APPDEPS="ajv ajv-formats lodash moment-timezone chance graphql 
     express apollo-server-express sequelize pg jwt-simple axios"
 
-  if [ $DEPLOY_TARGET == "aws" ]; then
+  if [ $DEPLOY_TARGET = "aws" ]; then
     APPDEPS="$APPDEPS aws-serverless-express apollo-server-lambda"
   fi
 
@@ -81,15 +75,13 @@ app_reset() {
 
 app_stop() {
   # stop database server
-  if [ $USE_DOCKER_DB == 1 ]; then docker-compose stop; fi
+  # if [ $USE_DOCKER_DB = 1 ]; then docker-compose stop; fi
 }
 
 
 app_dev() {
   # start database server
-  if [ $USE_DOCKER_DB == 1 ]; then
-    if [ ! -d "./docker/data" ]; then mkdir -p "./docker/data"; fi
-    docker-compose up -d;
+  if [ $USE_DOCKER_DB = 1 ]; then
     sleep 5
   fi
   # run node file
@@ -228,81 +220,32 @@ app_dist() {
   node dist/server.js
 }
 
-
-docker_dbstart() {
-  docker_dbstop
-  docker run -dit --rm \
-  -p $DB_PORT:5432 \
-  --net $NET_NAME \
-  -v $PWD/docker/data:/var/lib/postgresql \
-  -e POSTGRES_USER=$DBUSER_NAME \
-  -e POSTGRES_PASSWORD=$DBUSER_PASS \
-  --name="$DBAPP_NAME" postgres:12-alpine
-}
-
-
-docker_dbstop() {
-  docker stop -t 2 $DBAPP_NAME
-}
-
-
-# Create database and user according to .env file values
-docker_dbinit() {
-  echo "CREATING: $DB_NAME"
-  docker exec $DBAPP_NAME /usr/local/bin/psql \
-    "postgresql://$DBUSER_NAME:$DBUSER_PASS@localhost/postgres" \
-    -c "CREATE DATABASE $DB_NAME;"
-
-  INIT_SCRIPT="CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
-  GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
-
-  docker exec $DBAPP_NAME /usr/local/bin/psql \
-    "postgresql://$DBUSER_NAME:$DBUSER_PASS@localhost/$DB_NAME" \
-    -c "$INIT_SCRIPT"
-}
-
-
-docker_dbimport() {
-  echo "IMPORTING: $1"
-  docker exec -i $DBAPP_NAME /usr/local/bin/psql \
-    "postgresql://$DBUSER_NAME:$DBUSER_PASS@localhost/$DB_NAME" < $1
-}
-
-
 app_hook_link() {
   ln -s ../../hooks/pre-commit .git/hooks/pre-commit
 }
 
 
 # import environment variables for local testing
-set -a; if [ -f '.env' ]; then source .env; fi; app_set_environment; set +a
+set -a; if [ -f '.env' ]; then . ./.env; fi; app_set_environment; set +a
 
-if [ "$1" == "init" ]; then app_init; exit; fi
-if [ "$1" == "reset" ]; then app_reset; exit; fi
-if [ "$1" == "hook" ]; then app_hook_link; exit; fi
+if [ "$1" = "init" ]; then app_init; exit; fi
+if [ "$1" = "reset" ]; then app_reset; exit; fi
+if [ "$1" = "hook" ]; then app_hook_link; exit; fi
 
-if [ "$1" == "dev" ]; then app_dev; exit; fi
-if [ "$1" == "stop" ]; then app_stop; exit; fi
+if [ "$1" = "dev" ]; then app_dev; exit; fi
+if [ "$1" = "stop" ]; then app_stop; exit; fi
 
-if [ "$1" == "build" ]; then app_build $2; exit; fi
-if [ "$1" == "dist" ]; then app_dist $2; exit; fi
+if [ "$1" = "build" ]; then app_build $2; exit; fi
+if [ "$1" = "dist" ]; then app_dist $2; exit; fi
 
-if [ "$1" == "sq" ]; then shift 1; app_sequelize $*; exit; fi
+if [ "$1" = "sq" ]; then shift 1; app_sequelize $*; exit; fi
 
-if [ "$1" == "test" ]; then yarn test; exit; fi
-if [ "$1" == "lint" ]; then yarn lint; exit; fi
+if [ "$1" = "test" ]; then yarn test; exit; fi
+if [ "$1" = "lint" ]; then yarn lint; exit; fi
 
-if [ "$1" == "deploy-heroku" ]; then app_deploy_heroku; exit; fi
-if [ "$1" == "deploy-aws" ]; then app_deploy_aws; exit; fi
+if [ "$1" = "deploy-heroku" ]; then app_deploy_heroku; exit; fi
+if [ "$1" = "deploy-aws" ]; then app_deploy_aws; exit; fi
 
-if [ "$1" == "debug" ]; then app_debug; exit; fi
-
-
-# database commands
-if [ "$1" == "dbstart" ]; then docker_dbstart; exit; fi
-if [ "$1" == "dbstop" ]; then docker_dbstop; exit; fi
-
-if [ "$1" == "dbinit" ]; then docker_dbinit $2; exit; fi
-if [ "$1" == "dbimport" ]; then docker_dbimport $2; exit; fi
+if [ "$1" = "debug" ]; then app_debug; exit; fi
 
 echo "Command not found"

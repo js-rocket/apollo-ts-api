@@ -2,6 +2,10 @@
 
 'use strict';
 
+const Chance = require('chance')
+
+const chance = new Chance()
+
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     const insert = () =>
@@ -10,9 +14,11 @@ module.exports = {
         [
           {
             id: 1,
+            uuid: chance.guid(),
             email: 'js+admin@rokt.io',
             password: 'adasda',
             salt: '90ut50ut0',
+            status: 20,
             role: 10,
           },
         ],
