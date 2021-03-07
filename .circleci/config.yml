@@ -3,7 +3,7 @@ jobs:
   lint-test:
     working_directory: ~/app/
     docker:
-      - image: circleci/node:lts-buster
+      - image: cimg/node:12
     resource_class: small
     steps:
       - checkout
@@ -24,7 +24,7 @@ jobs:
   build-test:
     working_directory: ~/app/
     docker:
-      - image: circleci/node:lts-buster
+      - image: cimg/node:12
     resource_class: small
     steps:
       - checkout
@@ -42,7 +42,7 @@ jobs:
   publish-staging:
     working_directory: ~/app/
     docker:
-      - image: circleci/node:lts-buster
+      - image: cimg/node:12
     resource_class: small
     environment:
       AWS_STAGE: staging
@@ -71,7 +71,7 @@ jobs:
   publish-prod:
     working_directory: ~/app/
     docker:
-      - image: circleci/node:lts-buster
+      - image: cimg/node:12
     resource_class: small
     environment:
       AWS_STAGE: prod

@@ -2,15 +2,8 @@
 APP_NAME=myapi
 NET_NAME=bridge1
 
-# Possible values are: heroku, aws, vercel, gcp
-DEPLOY_TARGET=aws
-
 # Deployment: heroku
 HEROKU_DEPLOY_SSH_KEY=~/ssh_certs/heroku1
-
-# Deplyoment: AWS
-AWS_AMPLIFY_APP_ID=xxxxXXXXX
-AWS_LAMBDA_FUNCTION=xxxxXXXXX
 
 # set to zero if you want to use you own local database for testing
 USE_DOCKER_DB=0
@@ -41,10 +34,6 @@ app_init() {
   # @babel/runtime
   APPDEPS="ajv ajv-formats lodash moment-timezone chance graphql 
     express apollo-server-express sequelize pg jwt-simple axios"
-
-  if [ $DEPLOY_TARGET = "aws" ]; then
-    APPDEPS="$APPDEPS aws-serverless-express apollo-server-lambda"
-  fi
 
   yarn add $APPDEPS
 
@@ -100,55 +89,6 @@ app_build() {
 
 app_test() {
   yarn jest
-}
-
-
-app_sequelize() {
-  yarn sequelize --env dev $*
-}
-
-
-app_deploy_aws() {
-  echo "Deploying"
-  # note down currnt project dependancies
-  DEPS=$(echo "const fs = require('fs'), PKG='package.json', pkg = JSON.parse(fs.readFileSync(PKG, 'utf8'))
-console.log(JSON.stringify(pkg.dependencies,null,2))
-" | node -)
-
-  # clear deploy directory and recreate
-  rm -rf ./deploy/awsamp
-  mkdir -p ./deploy/awsamp
-  cd ./deploy/awsamp
-
-  AMPLIFY_CONFIG="{\"SourceDir\":\"src\",\"DistributionDir\":\"build\",\"BuildCommand\":\"echo building\",\"StartCommand\":\"echo starting\"}"
-  AMPLIFY_PROVIDER="{\"awscloudformation\":{\"useProfile\":false,
-  \"accessKeyId\":\"$AWS_ACCESS_KEY_ID\",\"secretAccessKey\":\"$AWS_SECRET_ACCESS_KEY\",\"region\":\"$AWS_DEFAULT_REGION\"}}"
-
-  #pull down amplify project
-  amplify pull --amplify "{\"appId\":\"$AWS_AMPLIFY_APP_ID\",\"envName\":\"$AWS_STAGE\",\"defaultEditor\":\"code\"}" \
-  --providers "$AMPLIFY_PROVIDER" \
-  --frontend "{\"frontend\":\"javascript\",\"framework\":\"none\",\"config\":$AMPLIFY_CONFIG}" --yes
-
-  # remove existing content and copy new content
-  AWS_API_SRC_PATH=./amplify/backend/function/$AWS_LAMBDA_FUNCTION/src
-  rm -rf $AWS_API_SRC_PATH
-  mkdir -p $AWS_API_SRC_PATH
-  cp ../../dist/server.js $AWS_API_SRC_PATH/index.js
-
-  echo "{
-  \"name\": \"$AWS_LAMBDA_FUNCTION\",
-  \"version\": \"1.0.0\",
-  \"main\": \"index.js\",
-  \"dependencies\": $DEPS
-}" > $AWS_API_SRC_PATH/package.json
-
-  # push new content to the cloud
-  amplify push --providers "$AMPLIFY_PROVIDER" --yes
-  PUSH_EXIT_STATUS=$?
-  cd ../../
-
-  echo "Sent to AWS"
-  exit $PUSH_EXIT_STATUS
 }
 
 
@@ -241,8 +181,7 @@ if [ "$1" = "dist" ]; then app_dist $2; exit; fi
 if [ "$1" = "test" ]; then yarn test; exit; fi
 if [ "$1" = "lint" ]; then yarn lint; exit; fi
 
-if [ "$1" = "deploy-heroku" ]; then app_deploy_heroku; exit; fi
-if [ "$1" = "deploy-aws" ]; then app_deploy_aws; exit; fi
+if [ "$1" = "deploy" ]; then app_deploy_heroku; exit; fi
 
 if [ "$1" = "debug" ]; then app_debug; exit; fi
 

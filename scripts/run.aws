@@ -2,12 +2,6 @@
 APP_NAME=myapi
 NET_NAME=bridge1
 
-# Possible values are: heroku, aws, vercel, gcp
-DEPLOY_TARGET=aws
-
-# Deployment: heroku
-HEROKU_DEPLOY_SSH_KEY=~/ssh_certs/heroku1
-
 # Deplyoment: AWS
 AWS_AMPLIFY_APP_ID=xxxxXXXXX
 AWS_LAMBDA_FUNCTION=xxxxXXXXX
