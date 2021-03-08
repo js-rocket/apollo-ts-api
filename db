@@ -1,10 +1,12 @@
 #!/bin/sh
+# Postgres database helper script
+
 NET_NAME=bridge1
 DBAPP_NAME=app_db
 
 auto_create_bridge() {
   docker network ls | grep "$NET_NAME" > /dev/null
-  if [ ! $? = 0 ]; then docker network create bridge1; fi
+  if [ ! $? = 0 ]; then docker network create $NET_NAME; fi
 }
 
 app_set_environment() {

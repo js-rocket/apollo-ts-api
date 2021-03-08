@@ -1,4 +1,6 @@
 #!/bin/sh
+# Postgres database helper script
+
 NET_NAME=bridge1
 DBAPP_NAME=app_db
 

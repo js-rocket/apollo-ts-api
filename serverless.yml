@@ -1,0 +1,54 @@
+service: apollo-ts-api
+
+frameworkVersion: ">=1.1.0 <=3.0.0"
+
+# order of plugins is important serverless-plugin-typescript should come first
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+  - serverless-domain-manager
+
+provider:
+  name: aws
+  profile: profile-serverless
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'production'}
+  region: ap-southeast-2
+  timeout: 30
+  environment:
+    DB_URL: ${self:custom.${self:custom.stage}.DB_URL}
+    JWT_SECRET: 'jg89g895yt475t45t9fe'
+
+functions:
+  app:
+    handler: dist/src/index.handler
+    memorySize: 256
+    events:
+      - http: ANY /
+      - http: 'ANY {proxy+}'
+
+custom:
+  stage: ${opt:stage, 'prod'}
+  defaultConfigType: 'cloud'
+  serverless-offline:
+    port: 4000
+    host: '0.0.0.0'
+  customDomain:
+    domainName: ${self:custom.${self:custom.stage}.API_DOMAIN}
+    basePath: ''
+    certificateName: 'rokt.dev'
+    stage: ${self:provider.stage}
+    createRoute53Record: true
+
+  # stage specific variables
+  dev:
+    DB_URL: ${env:DB_URL}
+    API_DOMAIN: local.api.test.rokt.dev
+
+  uat:
+    DB_URL: ${env:UAT_DB_URL}
+    API_DOMAIN: uat-api.test.rokt.dev
+
+  prod:
+    DB_URL: ${env:PROD_DB_URL}
+    API_DOMAIN: api.test.rokt.dev
