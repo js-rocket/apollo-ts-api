@@ -3,7 +3,6 @@ const path = require('path');
 
 const webpack = require('webpack');
 const nodeExternals = require('webpack-node-externals');
-const serverlessWebpack = require('serverless-webpack');
 
 var runningPID = null;
 
@@ -26,15 +25,18 @@ function RunPlugin() {
   };
 }
 
+const isProd = process.argv.indexOf('--mode') + 1 === process.argv.indexOf('production');
+const isAWSLambda = process.argv.indexOf('--lambda') > 0;
+
+const entry = isAWSLambda ? { server: './src/index_aws.ts' } : { server: './src/index.ts' };
 
 module.exports = {
-  entry: serverlessWebpack.lib.entries,
-  mode: serverlessWebpack.lib.webpack.isLocal ? 'development' : 'production',
-  // output: {
-  //   path: path.join(__dirname, 'dist'),
-  //   publicPath: '/',
-  //   filename: 'server.js',
-  // },
+  entry,
+  output: {
+    path: path.join(__dirname, 'dist'),
+    publicPath: '/',
+    filename: 'server.js',
+  },
   target: 'node',
   node: {
     // Need this when working with express, otherwise the build fails
@@ -78,5 +80,5 @@ module.exports = {
       },
     ],
   },
-  // plugins: [RunPlugin()],
+  plugins: [RunPlugin()],
 };

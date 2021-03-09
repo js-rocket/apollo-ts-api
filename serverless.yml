@@ -4,7 +4,7 @@ frameworkVersion: ">=1.1.0 <=3.0.0"
 
 # order of plugins is important serverless-plugin-typescript should come first
 plugins:
-  - serverless-plugin-typescript
+  - serverless-webpack
   - serverless-offline
   - serverless-domain-manager
 
@@ -21,7 +21,7 @@ provider:
 
 functions:
   app:
-    handler: dist/src/index.handler
+    handler: src/index.handler
     memorySize: 256
     events:
       - http: ANY /
@@ -30,6 +30,8 @@ functions:
 custom:
   stage: ${opt:stage, 'prod'}
   defaultConfigType: 'cloud'
+  webpack:
+    includeModules: true
   serverless-offline:
     port: 4000
     host: '0.0.0.0'

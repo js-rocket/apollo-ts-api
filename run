@@ -40,8 +40,7 @@ app_init() {
     prettier eslint-plugin-prettier eslint-config-prettier \
     jest supertest ts-jest \
     sequelize-cli \
-    serverless serverless-offline serverless-domain-manager \
-    serverless-plugin-typescript serverless-webpack
+    serverless serverless-offline serverless-domain-manager serverless-webpack
   
   update_package_json
 }
@@ -81,8 +80,7 @@ auto_stop_db() {
 
 app_stop() {
   # stop database server
-  # if [ $USE_DOCKER_DB = 1 ]; then docker-compose stop; fi
-  echo "Does nothing"
+  echo "Use Ctrl+C to stop app"
   if [ ! "" = "$DBAPP_NAME" ]; then auto_stop_db; fi
 }
 
