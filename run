@@ -38,7 +38,7 @@ app_init() {
     typescript ts-loader @types/node @types/validator \
     eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin \
     prettier eslint-plugin-prettier eslint-config-prettier \
-    jest supertest ts-jest \
+    jest ts-jest supertest @types/supertest \
     sequelize-cli \
     serverless serverless-offline serverless-domain-manager serverless-webpack
   

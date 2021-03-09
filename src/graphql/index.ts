@@ -14,7 +14,7 @@ const context = async ({ req }: { req: express.Request }) => ({ db, req });
 
 //type gqlInstance = typeof gql;
 
-const ApolloServerOptions = ( /* gql: gqlInstance */): ApolloServerExpressConfig => {
+const ApolloServerOptions = (/* gql: gqlInstance */): ApolloServerExpressConfig => {
   const typeDefs = gql(graphqlSchema);
   const apolloOptions = { typeDefs, resolvers, context, introspection: true, playground: true };
   return apolloOptions;

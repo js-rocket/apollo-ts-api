@@ -2,9 +2,10 @@
 
 'use strict';
 
-const Chance = require('chance')
+// const Chance = require('chance');
+import Chance from 'chance';
 
-const chance = new Chance()
+const chance = new Chance();
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
