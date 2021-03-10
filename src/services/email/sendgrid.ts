@@ -1,5 +1,5 @@
-import config from 'src/config';
-import ajax from 'src/services/ajax';
+import config from '@src/config';
+import ajax from '@src/services/ajax';
 
 const SENDGRID_URL = 'https://api.sendgrid.com/v3/mail/send';
 

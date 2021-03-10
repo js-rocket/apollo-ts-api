@@ -44,7 +44,7 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     alias: {
-      src: path.resolve(__dirname, 'src/'),
+      '@src': path.resolve(__dirname, 'src/'),
     },
   },
   externals: [nodeExternals()], // Need this to avoid error when working with Express
@@ -64,14 +64,6 @@ module.exports = {
         ],
         exclude: /node_modules/,
       },
-      // {
-      //   // Transpiles ES6-8 into ES5
-      //   test: /\.js$/,
-      //   exclude: /node_modules/,
-      //   use: {
-      //     loader: 'babel-loader',
-      //   },
-      // },
       {
         test: /\.(txt|graphql)$/i,
         use: 'raw-loader',

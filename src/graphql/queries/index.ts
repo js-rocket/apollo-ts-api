@@ -3,13 +3,14 @@
   It should just call a function that returns a result
 */
 
-// import { systemHealthCheck } from 'src/libs/system';
-// import { isTokenValid } from 'src/libs/auth';
-import { sendEmail } from 'src/services/email';
+// import { systemHealthCheck } from '@src/libs/system';
+// import { isTokenValid } from '@src/libs/auth';
+import { sendEmail } from '@src/services/email';
 
 const Query = {
   // eslint-disable-next-line no-unused-vars,@typescript-eslint/no-unused-vars
-  version: (parent: _obj, args: _obj, context: _obj, info: _obj): string => '1.0.0',
+  version: (parent: _obj, args: _obj, context: _obj, info: _obj): string =>
+    `1.0.0 (${new Date().toISOString()})`,
 
   // eslint-disable-next-line no-unused-vars,@typescript-eslint/no-unused-vars
   // healthCheck: async (parent, args, context, info) => {

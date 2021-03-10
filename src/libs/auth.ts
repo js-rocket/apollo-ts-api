@@ -5,7 +5,7 @@ Authentication related functions
 import crypto from 'crypto';
 import jwt from 'jwt-simple';
 
-import config from 'src/config';
+import config from '@src/config';
 
 export const encryptPassword = (password: string, salt: string): string => {
   const shasum = crypto.createHash('sha1');

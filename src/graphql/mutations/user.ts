@@ -6,8 +6,8 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import Chance from 'chance';
 
-import { USER_ROLE, USER_STATUS } from 'src/constants';
-import { encryptPassword, getUserToken } from 'src/libs/auth';
+import { USER_ROLE, USER_STATUS } from '@src/constants';
+import { encryptPassword, getUserToken } from '@src/libs/auth';
 
 const print = console.log; // eslint-disable-line no-console,no-unused-vars,@typescript-eslint/no-unused-vars
 

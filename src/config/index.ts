@@ -5,7 +5,7 @@
 
 const postgresURL = () => {
   const DB_STRING =
-    process.env.DATABASE_URL || 'postgres://User_name:Password_value@Host_name:5432/Database_name';
+    process.env.DB_URL || 'postgres://User_name:Password_value@Host_name:5432/Database_name';
   const dbfields = DB_STRING.match(/postgres:\/\/(.*):(.*)@(.*):(.*)\/(.*)/);
   return {
     username: dbfields[1],
