@@ -33,7 +33,7 @@ jobs:
       - run: NODE_ENV=development yarn
       - run:
           nane: run test build
-          command: ./run build --lambda
+          command: ./run build
       - save_cache:
           key: node_modules-{{ checksum "package.json" }}
           paths:
