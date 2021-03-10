@@ -3,7 +3,7 @@ jobs:
   lint-test:
     working_directory: ~/app/
     docker:
-      - image: cimg/node:12
+      - image: cimg/node:12.21.0
     resource_class: small
     steps:
       - checkout
@@ -24,7 +24,7 @@ jobs:
   build-test:
     working_directory: ~/app/
     docker:
-      - image: cimg/node:12
+      - image: cimg/node:12.21.0
     resource_class: small
     steps:
       - checkout
@@ -42,7 +42,7 @@ jobs:
   publish-staging:
     working_directory: ~/app/
     docker:
-      - image: cimg/node:12
+      - image: cimg/node:12.21.0
     resource_class: small
     environment:
       AWS_STAGE: staging
@@ -71,7 +71,7 @@ jobs:
   publish-prod:
     working_directory: ~/app/
     docker:
-      - image: cimg/node:12
+      - image: cimg/node:12.21.0
     resource_class: small
     environment:
       AWS_STAGE: prod
@@ -99,7 +99,7 @@ jobs:
 
 workflows:
   version: 2
-  trl-workflow:
+  ci-workflow:
     jobs:
       - lint-test
       - build-test:
