@@ -38,7 +38,7 @@ app_init() {
     typescript ts-loader @types/node @types/validator \
     eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin \
     prettier eslint-plugin-prettier eslint-config-prettier \
-    jest ts-jest supertest @types/supertest \
+    jest ts-jest @types/jest supertest @types/supertest jest-transform-graphql \
     sequelize-cli \
     serverless serverless-offline serverless-domain-manager serverless-webpack
   
@@ -95,7 +95,7 @@ app_build() {
 
 
 app_test() {
-  yarn jest
+  yarn jest --env=node --colors --coverage ./src
 }
 
 
@@ -135,7 +135,7 @@ if [ "$1" = "stop" ]; then app_stop; exit; fi
 if [ "$1" = "build" ]; then app_build $2; exit; fi
 if [ "$1" = "dist" ]; then app_dist $2; exit; fi
 
-if [ "$1" = "test" ]; then yarn test; exit; fi
+if [ "$1" = "test" ]; then app_test; exit; fi
 if [ "$1" = "lint" ]; then yarn lint; exit; fi
 
 if [ "$1" = "deploy" ]; then app_deploy_awslambda; exit; fi

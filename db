@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Postgres database helper script
 
 NET_NAME=bridge1
@@ -10,7 +10,7 @@ auto_create_bridge() {
 }
 
 app_set_environment() {
-  NODE_SET_ENV=$(echo "print=console.log; dbfields = process.env.DATABASE_URL.match(/postgres:\/\/(.*):(.*)@(.*):(.*)\/(.*)/);
+  NODE_SET_ENV=$(echo "print=console.log; dbfields = process.env.DB_URL.match(/postgres:\/\/(.*):(.*)@(.*):(.*)\/(.*)/);
   print('DB_USER='+dbfields[1]);
   print('DB_PASSWORD=' + decodeURIComponent(dbfields[2]) );
   print('DB_HOST=' + dbfields[3]);
@@ -84,7 +84,7 @@ app_sequelize() {
 
 
 # import environment variables for local testing
-set -a; if [ -f '.env' ]; then . ./.env; fi; app_set_environment; set +a
+set -a; if [ -f '.env' ]; then source ./.env; fi; app_set_environment; set +a
 
 # database commands
 if [ "$1" = "start" ]; then auto_create_bridge; docker_dbstart; exit; fi
