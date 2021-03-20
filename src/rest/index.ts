@@ -13,14 +13,14 @@ app.get('/', (req, res) => {
 });
 
 app.get('/rest/version', async (req, res) => {
-  const result: any = await db.sequelize
+  const result = await db.sequelize
     .query(`SELECT uuid FROM "User";`)
-    .then((data: any) => {
+    .then((data: Array<_obj>) => {
       return data[0];
     })
     .catch((error: string) => {
       log('## Could not connect to the database', error);
-      return '';
+      return [];
     });
 
   res.send(config.version + '\n' + JSON.stringify(result, null, 2) + '\n');
