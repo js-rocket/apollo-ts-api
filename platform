@@ -1,0 +1,58 @@
+#!/bin/sh
+# script to add and remove platforms
+
+awslambda_install() {
+  cp _platforms/awslambda/run .
+  cp _platforms/awslambda/serverless.yml .
+  cp _platforms/awslambda/env.sample .
+  cp _platforms/awslambda/webpack.config.js .
+  cp _platforms/awslambda/index.ts ./src
+  cp _platforms/awslambda/index2.ts ./src
+}
+
+awslambda_remove() {
+  rm src/index.ts src/index2.ts serverless.yml run env.sample webpack.config.js
+}
+
+heroku_install() {
+  cp _platforms/heroku/run .
+  cp _platforms/heroku/env.sample .
+  cp _platforms/node/webpack.config.js .
+  cp _platforms/node/index.ts ./src  
+}
+
+heroku_remove() {
+  rm src/index.ts run env.sample webpack.config.js
+}
+
+docker_install() {
+  cp _platforms/docker/run .
+  cp _platforms/docker/env.sample .
+  cp _platforms/node/webpack.config.js .
+  cp _platforms/node/index.ts ./src
+}
+
+docker_remove() {
+  rm src/index.ts run env.sample webpack.config.js  
+}
+
+
+if [ "$1" = "lambda-install" ]; then awslambda_install; exit; fi
+if [ "$1" = "lambda-remove" ]; then awslambda_remove; exit; fi
+
+if [ "$1" = "heroku-install" ]; then heroku_install; exit; fi
+if [ "$1" = "heroku-remove" ]; then heroku_remove; exit; fi
+
+if [ "$1" = "docker-install" ]; then docker_install; exit; fi
+if [ "$1" = "docker-remove" ]; then docker_remove; exit; fi
+
+echo "Invalid option.  Correct usage is:
+  ./platform <option>
+where valid options are:
+  lambda-install
+  lambda-remove
+  heroku-install
+  heroku-remove
+  docker-install
+  docker-remove
+"

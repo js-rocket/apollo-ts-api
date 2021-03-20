@@ -3,13 +3,21 @@
 This is a template for a GraphQL API based on an ExpressJS + Apollo + Sequelize ORM stack
 
 The main logic for the API should stay the same across platforms.
-Only the entry point (index.ts) and deployment script should be changed to cater for another platform
+Only the entry point (index.ts) and deployment script should be changed to cater for different platforms
 
-The `run` and `db` scripts help with common operations
+The `run` and `db` scripts help with common operations once your platform is configured
 
 # Setup
 
-After downloading repository `yarn install` will install required node modules
+After downloading repository, install your platform specific files with the `./platform` script.
+example:
+
+`./platform heroku-install`
+
+Once your platform is selected initialise your project:
+
+`./run reset && ./run init`
+
 
 # Helper script
 
