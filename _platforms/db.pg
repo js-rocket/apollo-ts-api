@@ -1,16 +1,19 @@
 #!/bin/sh
 # Postgres database helper script
+# Ensure folder where this script will run from contains environment variable file .env containing:
+# DB_URL=postgres://localuser:Localpass1234@pgdb:5432/localdb
 
 NET_NAME=bridge1
-DBAPP_NAME=app_db
+DBAPP_NAME=pgdb
+DATA_FOLDER=.docker_data
 
 auto_create_bridge() {
   docker network ls | grep "$NET_NAME" > /dev/null
-  if [ ! $? = 0 ]; then docker network create bridge1; fi
+  if [ ! $? = 0 ]; then docker network create $NET_NAME; fi
 }
 
 app_set_environment() {
-  NODE_SET_ENV=$(echo "print=console.log; dbfields = process.env.DATABASE_URL.match(/postgres:\/\/(.*):(.*)@(.*):(.*)\/(.*)/);
+  NODE_SET_ENV=$(echo "print=console.log; dbfields = process.env.DB_URL.match(/postgres:\/\/(.*):(.*)@(.*):(.*)\/(.*)/);
   print('DB_USER='+dbfields[1]);
   print('DB_PASSWORD=' + decodeURIComponent(dbfields[2]) );
   print('DB_HOST=' + dbfields[3]);
@@ -21,27 +24,26 @@ app_set_environment() {
   NODE_SET_ENV=''
 }
 
+docker_dbstop() {
+  docker ps --format "{{.Names}}" | grep "$DBAPP_NAME" > /dev/null
+  if [ $? = 0 ]; then docker stop -t 2 $DBAPP_NAME; fi
+}
 
 docker_dbstart() {
-  if [ ! -d $PWD/docker/data ]; then mkdir $PWD/docker/data; chmod a+rwx $PWD/docker/data; fi
+  if [ ! -d $PWD/$DATA_FOLDER ]; then mkdir -p $PWD/$DATA_FOLDER; chmod a+rwx $PWD/$DATA_FOLDER; fi
 
-  # docker_dbstop
+  docker_dbstop
+
   docker run -dit --rm \
   -p $DB_PORT:5432 \
   --net $NET_NAME \
-  -v $PWD/docker/data:/var/lib/postgresql/data \
+  -v $PWD/$DATA_FOLDER:/var/lib/postgresql/data \
   -e POSTGRES_USER=$DB_USER \
   -e POSTGRES_PASSWORD=$DB_PASSWORD \
   --name="$DBAPP_NAME" postgres:12-alpine
 }
 
-
-docker_dbstop() {
-  docker stop -t 2 $DBAPP_NAME
-}
-
-
-docker_dbshow() {
+docker_dbfix() {
   # fix file permissions so that user can see them
   echo "Updating file permissions $UID"
   docker exec $DBAPP_NAME chown -R postgres:$UID /var/lib/postgresql/data
@@ -74,12 +76,8 @@ docker_dbimport() {
 docker_dbexport() {
   echo "DUMPING: $1"
   docker exec -i $DBAPP_NAME /usr/local/bin/pg_dump \
-    "postgresql://$DB_USER:$DB_PASSWORD@localhost/$DB_NAME" \
-    --exclude-table sequelize_seed --exclude-table sequelize_migration > dump.sql
-}
-
-app_sequelize() {
-  yarn sequelize --env dev $*
+    "postgresql://$DB_USER:$DB_PASSWORD@localhost/$DB_NAME" > dump.sql
+#    --exclude-table sequelize_seed --exclude-table sequelize_migration > dump.sql
 }
 
 
@@ -91,12 +89,10 @@ if [ "$1" = "start" ]; then auto_create_bridge; docker_dbstart; exit; fi
 if [ "$1" = "stop" ]; then docker_dbstop; exit; fi
 
 if [ "$1" = "init" ]; then docker_dbinit $2; exit; fi
-if [ "$1" = "show" ]; then docker_dbshow $2; exit; fi
+if [ "$1" = "fix" ]; then docker_dbfix $2; exit; fi
 
 if [ "$1" = "import" ]; then docker_dbimport $2; exit; fi
 if [ "$1" = "export" ]; then docker_dbexport; exit; fi
-
-if [ "$1" = "sq" ]; then shift 1; app_sequelize $*; exit; fi
 
 echo "Command not found"
 

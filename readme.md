@@ -25,6 +25,8 @@ Database commands:
 
 `./db export` - To export the database to a file named dump.sql
 
+`./run sq` - run sequelize command line example: `./run sq --env dev db:migrate`
+
 Project setup:
 
 `./run init` - initializes a new project in current directory

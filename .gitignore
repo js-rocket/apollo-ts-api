@@ -1,4 +1,6 @@
-.env
 node_modules/
-deploy/
-docker/data/
+.env
+.deploy/
+.docker_data/
+.serverless/
+.webpack/

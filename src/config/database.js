@@ -26,11 +26,11 @@ const connection = {
     process.env.PGSSLMODE === 'disable'
       ? ''
       : {
-          ssl: {
-            require: true, // for heroku Postgres databases
-            rejectUnauthorized: false, // allow self signed certificates
-          },
+        ssl: {
+          require: true, // for heroku Postgres databases
+          rejectUnauthorized: false, // allow self signed certificates
         },
+      },
   // same as index.js
   logging: false,
   seederStorage: 'sequelize', // by default it's not keeping track of the data seed
@@ -41,7 +41,7 @@ const connection = {
 // console.log('## connection:',connection )
 
 module.exports = {
-  production: connection,
   dev: connection,
   uat: connection,
+  prod: connection,
 };

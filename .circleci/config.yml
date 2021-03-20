@@ -39,13 +39,13 @@ jobs:
           paths:
             - ~/app/node_modules/
 
-  publish-staging:
+  publish-uat:
     working_directory: ~/app/
     docker:
       - image: cimg/node:12.21.0
     resource_class: small
     environment:
-      AWS_STAGE: staging
+      AWS_STAGE: uat
       AWS_DEFAULT_REGION: ap-southeast-2
     steps:
       - checkout
@@ -56,13 +56,10 @@ jobs:
           command: NODE_ENV=development yarn install
       - run:
           nane: Build result to dist folder
-          command: ./run build --lambda
-      - run:
-          name: Install AWS amplify CLI
-          command: sudo NODE_ENV=development npm install -g @aws-amplify/cli --unsafe-perm=true
+          command: ./run build --stage uat
       - run:
           name: Deploy to UAT
-          command: ./run deploy-aws
+          command: ./run deploy-uat
       - save_cache:
           key: node_modules-{{ checksum "package.json" }}
           paths:
@@ -85,13 +82,10 @@ jobs:
           command: NODE_ENV=development yarn install
       - run:
           nane: Build result to dist folder
-          command: ./run build --lambda
+          command: ./run build --stage prod
       - run:
-          name: Install AWS amplify CLI
-          command: sudo NODE_ENV=development npm install -g @aws-amplify/cli --unsafe-perm=true
-      - run:
-          name: Deploy to PROD
-          command: ./run deploy-aws
+          name: Deploy to PRODUCTION
+          command: ./run deploy
       - save_cache:
           key: node_modules-{{ checksum "package.json" }}
           paths:
@@ -105,7 +99,7 @@ workflows:
       - build-test:
           requires:
             - lint-test
-      - hold-publish-staging:
+      - hold-publish-uat:
           type: approval
           requires:
             - build-test
@@ -113,9 +107,9 @@ workflows:
             branches:
               only:
                 - develop
-      - publish-staging:
+      - publish-uat:
           requires:
-            - hold-publish-staging
+            - hold-publish-uat
       - hold-publish-prod:
           type: approval
           requires:

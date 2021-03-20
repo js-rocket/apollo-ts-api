@@ -21,6 +21,7 @@ const config = {
   timezone: {
     default: 'Australia/Sydney',
   },
+  version: '1.0.0',
   database: {
     // same as database.js
     host: postgresURL().host,

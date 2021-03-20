@@ -1,8 +1,11 @@
 #!/bin/sh
 # MySql database helper script
+# Ensure folder where this script will run from contains environment variable file .env containing:
+# DB_URL="mysql:host=mysqldb;port=3306;dbname=localdb;user=localuser;password=Localpass1234"
 
 NET_NAME=bridge1
-DBAPP_NAME=app_db
+DBAPP_NAME=mysqldb
+DATA_FOLDER=.docker_data
 
 auto_create_bridge() {
   docker network ls | grep "$NET_NAME" > /dev/null
@@ -23,26 +26,27 @@ app_set_environment() {
   NODE_SET_ENV=''
 }
 
+docker_dbstop() {
+  docker ps --format "{{.Names}}" | grep "$DBAPP_NAME" > /dev/null
+  if [ $? = 0 ]; then docker stop -t 2 $DBAPP_NAME; fi
+}
 
 docker_dbstart() {
-  if [ ! -d .docker/data ]; then mkdir .docker/data; fi
+  if [ ! -d $PWD/$DATA_FOLDER ]; then mkdir -p $PWD/$DATA_FOLDER; chmod a+rwx $PWD/$DATA_FOLDER; fi
 
-  docker_stop
+  docker_dbstop
+
   docker run -dit --rm \
   -p $DB_PORT:3306 \
   --net $NET_NAME \
-  -v $PWD/.docker/data:/var/lib/mysql \
+  -v $PWD/$DATA_FOLDER:/var/lib/mysql \
   -e MYSQL_ROOT_PASSWORD=$DB_PASSWORD \
   -e MYSQL_USER=$DB_USER \
   -e MYSQL_PASSWORD=$DB_PASSWORD \
   --name="$DBAPP_NAME" mysql:5.7.33
 }
 
-docker_dbstop() {
-  docker stop -t 2 $DBAPP_NAME
-}
-
-docker_dbshow() {
+docker_dbfix() {
   # fix file permissions so that user can see them
   echo "Updating file permissions $UID"
   # docker exec $DBAPP_NAME chown -R postgres:$UID /var/lib/postgresql/data
@@ -65,27 +69,22 @@ docker_dbimport() {
 
 docker_dbexport() {
   docker exec -i $DBAPP_NAME /usr/bin/mysqldump -h localhost \
-    --user="$DBUSER_NAME" --password="$DB_PASSWORD" $DB_NAME \
-    --ignore-table=$DB_NAME.sequelize_seed --ignore-table=$DB_NAME.sequelize_migration > dump.sql
+    --user="$DBUSER_NAME" --password="$DB_PASSWORD" $DB_NAME > dump.sql
+#    --ignore-table=$DB_NAME.sequelize_seed --ignore-table=$DB_NAME.sequelize_migration > dump.sql
 }
 
-app_sequelize() {
-  yarn sequelize --env dev $*
-}
 
 # import environment variables for local testing
 set -a; if [ -f '.env' ]; then . ./.env; fi; app_set_environment; set +a
 
 # database commands
-if [ "$1" == "start" ]; then auto_create_bridge; docker_dbstart; exit; fi
-if [ "$1" == "stop" ]; then docker_dbstop; exit;  fi
+if [ "$1" = "start" ]; then auto_create_bridge; docker_dbstart; exit; fi
+if [ "$1" = "stop" ]; then docker_dbstop; exit;  fi
 
 if [ "$1" = "init" ]; then docker_dbinit $2; exit; fi
-if [ "$1" = "show" ]; then docker_dbshow $2; exit; fi
+if [ "$1" = "fix" ]; then docker_dbfix $2; exit; fi
 
-if [ "$1" == "export" ]; then docker_dbexport $2; exit; fi
-if [ "$1" == "import" ]; then docker_dbimport $2; exit; fi
-
-if [ "$1" = "sq" ]; then shift 1; app_sequelize $*; exit; fi
+if [ "$1" = "export" ]; then docker_dbexport $2; exit; fi
+if [ "$1" = "import" ]; then docker_dbimport $2; exit; fi
 
 echo "Command not found"

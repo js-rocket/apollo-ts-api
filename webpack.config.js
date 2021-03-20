@@ -26,6 +26,8 @@ function RunPlugin() {
   };
 }
 
+const isProd = !serverlessWebpack.lib.webpack.isLocal;
+console.log(`## Webpack isProd: ${isProd}`);
 
 module.exports = {
   entry: serverlessWebpack.lib.entries,
@@ -57,7 +59,7 @@ module.exports = {
           {
             loader: 'ts-loader',
             options: {
-              transpileOnly: false, // !isProd, // true makes faster builds but no type checking
+              transpileOnly: !isProd, // !isProd, // true makes faster builds but no type checking
               // experimentalWatchApi: false,
             },
           },
