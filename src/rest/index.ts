@@ -20,7 +20,7 @@ app.get('/rest/version', async (req, res) => {
     })
     .catch((error: string) => {
       log('## Could not connect to the database', error);
-      return [];
+      return [] as Array<_obj>;
     });
 
   res.send(config.version + '\n' + JSON.stringify(result, null, 2) + '\n');
