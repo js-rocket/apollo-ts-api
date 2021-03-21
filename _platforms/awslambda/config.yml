@@ -117,7 +117,7 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - main
       - publish-prod:
           requires:
             - hold-publish-prod
