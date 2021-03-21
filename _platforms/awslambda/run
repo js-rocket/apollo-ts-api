@@ -125,6 +125,7 @@ app_deploy_prod() {
   yarn sls deploy --stage prod --package ./.serverless
 }
 
+
 app_get_serverless_forceincludes(){
   echo "const fs = require('fs'), PKG='package.json', pkg = JSON.parse(fs.readFileSync(PKG, 'utf8'));
   const print=console.log;
@@ -133,6 +134,7 @@ app_get_serverless_forceincludes(){
   packages.forEach(item => {if (exclusions.indexOf(item) < 0) print('        - ' + item)})
   " | node -
 }
+
 
 app_debug() {
   DEPS=$(echo "const fs = require('fs'), PKG='package.json', pkg = JSON.parse(fs.readFileSync(PKG, 'utf8'));

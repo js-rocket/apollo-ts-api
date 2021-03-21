@@ -26,12 +26,10 @@ function RunPlugin() {
 }
 
 const isProd = process.argv.indexOf('--mode') + 1 === process.argv.indexOf('production');
-const isAWSLambda = process.argv.indexOf('--lambda') > 0;
-
-const entry = isAWSLambda ? { server: './src/index_aws.ts' } : { server: './src/index.ts' };
 
 module.exports = {
-  entry,
+  entry: { server: './src/index.ts' },
+  mode: isProd ? 'production' : 'development',
   output: {
     path: path.join(__dirname, 'dist'),
     publicPath: '/',
@@ -46,7 +44,7 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     alias: {
-      src: path.resolve(__dirname, 'src/'),
+      '@src': path.resolve(__dirname, 'src/'),
     },
   },
   externals: [nodeExternals()], // Need this to avoid error when working with Express
@@ -59,21 +57,13 @@ module.exports = {
           {
             loader: 'ts-loader',
             options: {
-              transpileOnly: false, // !isProd, // true makes faster builds but no type checking
+              transpileOnly: !isProd, // true makes faster builds but no type checking
               // experimentalWatchApi: false,
             },
           },
         ],
         exclude: /node_modules/,
       },
-      // {
-      //   // Transpiles ES6-8 into ES5
-      //   test: /\.js$/,
-      //   exclude: /node_modules/,
-      //   use: {
-      //     loader: 'babel-loader',
-      //   },
-      // },
       {
         test: /\.(txt|graphql)$/i,
         use: 'raw-loader',

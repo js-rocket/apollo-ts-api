@@ -1,19 +1,17 @@
 #!/bin/sh
+# Heroku helper script
+
 APP_NAME=myapi
 NET_NAME=bridge1
-
-# Deployment: heroku
-HEROKU_DEPLOY_SSH_KEY=~/ssh_certs/heroku1
-
-# set to zero if you want to use you own local database for testing
-USE_DOCKER_DB=0
-
+# specify name here to automatically start and stop database
+DBAPP_NAME=pgdb
 
 update_package_json() {
   echo "const fs = require('fs'), PKG='package.json', pkg = JSON.parse(fs.readFileSync(PKG, 'utf8'))
 pkg.main = 'src/index.js'
 pkg.engines = { node : '>=10.0.0' }
 pkg.scripts = {
+  compile: 'tsc',
   start: 'node ./dist/server.js',
   dev: 'webpack --watch',
   test: 'yarn jest',
@@ -31,7 +29,6 @@ fs.writeFileSync(PKG, JSON.stringify(pkg, null, 2));
 app_init() { 
   yarn init -y
   # add expressjs and graphql
-  # @babel/runtime
   APPDEPS="ajv ajv-formats lodash moment-timezone chance graphql 
     express apollo-server-express sequelize pg jwt-simple axios"
 
@@ -39,19 +36,12 @@ app_init() {
 
   # Add webpack, babel transpiler, eslint, prettier and jest/supertest
   yarn add -D webpack webpack-cli webpack-node-externals raw-loader \
-    typescript ts-loader @types/node @types/validator \
+    typescript ts-loader @types/node @types/validator @types/express \
     eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin \
     prettier eslint-plugin-prettier eslint-config-prettier \
-    jest supertest ts-jest \
-    sequelize-cli
+    jest ts-jest @types/jest supertest @types/supertest jest-transform-graphql \
+    sequelize-cli @types/sequelize
   
-  # yarn add -D webpack webpack-cli webpack-node-externals \
-  #   @babel/core @babel/preset-env babel-loader babel-plugin-inline-import @babel/plugin-transform-runtime \
-  #   eslint eslint-plugin-prettier eslint-config-prettier prettier \
-  #   eslint-config-airbnb-base eslint-plugin-import eslint-import-resolver-alias \
-  #   jest supertest \
-  #   sequelize-cli
-
   update_package_json
 }
 
@@ -62,55 +52,95 @@ app_reset() {
 }
 
 
-app_stop() {
-  # stop database server
-  # if [ $USE_DOCKER_DB = 1 ]; then docker-compose stop; fi
+app_hook_link() {
+  ln -s ../../hooks/pre-commit .git/hooks/pre-commit
 }
 
 
-app_dev() {
-  # start database server
-  if [ $USE_DOCKER_DB = 1 ]; then
-    sleep 5
+auto_stop_db() {
+  docker ps --format "{{.Names}}" | grep "$DBAPP_NAME" > /dev/null
+  if [ $? = 0 ]; then ./db stop; fi
+}
+
+
+app_stop() {
+  # stop database server
+  echo "Use Ctrl+C to stop app"
+  if [ ! "" = "$DBAPP_NAME" ]; then auto_stop_db; fi
+}
+
+
+auto_start_db() {
+  docker ps --format "{{.Names}}" | grep "$DBAPP_NAME" > /dev/null
+  if [ ! $? = 0 ]; then
+    ./db start;
+    echo ">> Database ($DBAPP_NAME) started"
+  else
+    echo ">> Database ($DBAPP_NAME) already running"
   fi
+}
+
+
+app_start() {
+  # start database server
+  if [ ! "" = "$DBAPP_NAME" ]; then
+    auto_start_db;
+    sleep 3
+  fi
+
   # run node file
-  yarn webpack --watch --mode development
+  yarn webpack --watch
 }
 
 
 app_build() {
   echo "Building"
-  if [ ! -d "./dist" ]; then mkdir ./dist; fi
-  if [ -d "./public" ]; then cp -f ./public/* ./dist/; fi
-  # yarn webpack --mode development $1
-  yarn webpack --mode production $1
+  yarn webpack $*
 }
 
+
+app_buildtest() {
+  # Run the bundle that was created with ./run build command
+  node dist/server.js
+}
 
 app_test() {
-  yarn jest
+  yarn jest --env=node --colors --coverage ./src
 }
 
 
-app_deploy_heroku() {
-  echo "Building"
-  app_build
+app_sequelize() {
+  yarn sequelize $*
+}
 
-  echo "Deploying"
-  DEPS=$(echo "const fs = require('fs'), PKG='package.json', pkg = JSON.parse(fs.readFileSync(PKG, 'utf8'))
+
+app_deploy_get_sshkey() {
+  unzip -P $HEROKU_SSH_KEY_PASS ../deploy_key.zip deploy_rsa
+}
+
+
+heroku_deployer() {
+ DEPS=$(echo "const fs = require('fs'), PKG='package.json', pkg = JSON.parse(fs.readFileSync(PKG, 'utf8'))
 console.log(JSON.stringify(pkg.dependencies,null,2))
 " | node -)
 
-  rm -rf ./deploy/heroku/
-  mkdir ./deploy/heroku
-  cd ./deploy/heroku
+  if [ -d ./.deploy ]; then rm -rf ./.deploy; fi
+  mkdir ./.deploy
+  cd ./.deploy
+
+  app_deploy_get_sshkey
 
   git init
-  git remote add heroku ssh://git@heroku.com/trl-tester.git
+  git config user.email "deployer@example.com"
+  git config user.name "Deployer"
+  git checkout -b main
+  # the first parameter should be $HEROKU_SSH_GIT_UAT
+  git remote add heroku $1
   sleep 1
-  GIT_SSH_COMMAND="ssh -i $HEROKU_DEPLOY_SSH_KEY" git pull heroku master
+  GIT_SSH_COMMAND="ssh -i ./deploy_rsa -o 'StrictHostKeyChecking no'" git pull heroku main
   sleep 2
-  rm -f server.js index.html main.js
+  rm -rf data/ server.js
+  cp -R ../dist/* .
 
   echo "{
   \"name\": \"api\",
@@ -121,67 +151,63 @@ console.log(JSON.stringify(pkg.dependencies,null,2))
     \"start\": \"node server.js\"
   }
 }" > ./package.json
-  echo "node_modules/" > ./.gitignore
+  echo -e "node_modules/\ndeploy_rsa" > ./.gitignore
 
-  cp -R ../../dist/* .
   git add * .gitignore
+  git add data/
   git commit -m "deploy commit"
 
-  GIT_SSH_COMMAND="ssh -i $HEROKU_DEPLOY_SSH_KEY" git push --set-upstream heroku master
-  cd ../..
-  # rm -rf ./deploy/heroku/
-
-  echo "Sent to heroku"
+  GIT_SSH_COMMAND="ssh -i ./deploy_rsa -o 'StrictHostKeyChecking no'" git push --set-upstream heroku main
+  cd ..
+  rm -rf ./.deploy
 }
 
 
-app_set_environment() {
-  NODE_SET_ENV=$(echo "print=console.log; dbfields = process.env.DATABASE_URL.match(/postgres:\/\/(.*):(.*)@(.*):(.*)\/(.*)/);
-  print('DB_USER='+dbfields[1]);
-  print('DB_PASSWORD=' + decodeURIComponent(dbfields[2]) );
-  print('DB_HOST=' + dbfields[3]);
-  print('DB_PORT=' + dbfields[4]);
-  print('DB_NAME=' + dbfields[5]);
-" | node -)
-  eval "$NODE_SET_ENV"
-  NODE_SET_ENV=''
+app_deploy_uat() {
+  echo "Deploying to UAT"
+  heroku_deployer $HEROKU_SSH_GIT_UAT
+  echo "Sent to Heroku"  
+}
+
+
+app_deploy_prod() {
+  echo "Deploying to production"
+  heroku_deployer $HEROKU_SSH_GIT_PROD
+  echo "Sent to Heroku"
 }
 
 
 app_debug() {
-  DEPS=$(echo "const fs = require('fs'), PKG='package.json', pkg = JSON.parse(fs.readFileSync(PKG, 'utf8'))
-console.log(JSON.stringify(pkg.dependencies,null,2))
+  DEPS=$(echo "const fs = require('fs'), PKG='package.json', pkg = JSON.parse(fs.readFileSync(PKG, 'utf8'));
+  const print=console.log;
+  const packages=Object.keys(pkg.dependencies);
+  const exclusions=['aws-lambda'];
+  packages.forEach(item => {if (exclusions.indexOf(item) < 0) print(item)})
 " | node -)
 echo $DEPS
 }
 
 
-app_dist() {
-  node dist/server.js
-}
-
-app_hook_link() {
-  ln -s ../../hooks/pre-commit .git/hooks/pre-commit
-}
-
-
 # import environment variables for local testing
-set -a; if [ -f '.env' ]; then . ./.env; fi; app_set_environment; set +a
+set -a; if [ -f '.env' ]; then . ./.env; fi; set +a
 
 if [ "$1" = "init" ]; then app_init; exit; fi
 if [ "$1" = "reset" ]; then app_reset; exit; fi
 if [ "$1" = "hook" ]; then app_hook_link; exit; fi
 
-if [ "$1" = "dev" ]; then app_dev; exit; fi
+if [ "$1" = "start" ]; then app_start; exit; fi
 if [ "$1" = "stop" ]; then app_stop; exit; fi
 
-if [ "$1" = "build" ]; then app_build $2; exit; fi
-if [ "$1" = "dist" ]; then app_dist $2; exit; fi
+if [ "$1" = "build" ]; then shift 1; app_build $*; exit; fi
+if [ "$1" = "build-test" ]; then app_buildtest; exit; fi
 
-if [ "$1" = "test" ]; then yarn test; exit; fi
+if [ "$1" = "test" ]; then app_test; exit; fi
 if [ "$1" = "lint" ]; then yarn lint; exit; fi
 
-if [ "$1" = "deploy" ]; then app_deploy_heroku; exit; fi
+if [ "$1" = "deploy" ]; then app_deploy_prod; exit; fi
+if [ "$1" = "deploy-uat" ]; then app_deploy_uat; exit; fi
+
+if [ "$1" = "sq" ]; then shift 1; app_sequelize $*; exit; fi
 
 if [ "$1" = "debug" ]; then app_debug; exit; fi
 

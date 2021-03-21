@@ -3,7 +3,6 @@ const path = require('path');
 
 const webpack = require('webpack');
 const nodeExternals = require('webpack-node-externals');
-const serverlessWebpack = require('serverless-webpack');
 
 var runningPID = null;
 
@@ -26,17 +25,16 @@ function RunPlugin() {
   };
 }
 
-const isProd = !serverlessWebpack.lib.webpack.isLocal;
-console.log(`## Webpack isProd: ${isProd}`);
+const isProd = process.argv.indexOf('--mode') + 1 === process.argv.indexOf('production');
 
 module.exports = {
-  entry: serverlessWebpack.lib.entries,
-  mode: serverlessWebpack.lib.webpack.isLocal ? 'development' : 'production',
-  // output: {
-  //   path: path.join(__dirname, 'dist'),
-  //   publicPath: '/',
-  //   filename: 'server.js',
-  // },
+  entry: { server: './src/index.ts' },
+  mode: isProd ? 'production' : 'development',
+  output: {
+    path: path.join(__dirname, 'dist'),
+    publicPath: '/',
+    filename: 'server.js',
+  },
   target: 'node',
   node: {
     // Need this when working with express, otherwise the build fails
@@ -59,7 +57,7 @@ module.exports = {
           {
             loader: 'ts-loader',
             options: {
-              transpileOnly: !isProd, // !isProd, // true makes faster builds but no type checking
+              transpileOnly: !isProd, // true makes faster builds but no type checking
               // experimentalWatchApi: false,
             },
           },
@@ -72,5 +70,5 @@ module.exports = {
       },
     ],
   },
-  // plugins: [RunPlugin()],
+  plugins: [RunPlugin()],
 };

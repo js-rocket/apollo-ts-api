@@ -1,16 +1,19 @@
-// This file is the entry point for AWS lambda function
-import { ApolloServer } from 'apollo-server-lambda';
+import { ApolloServer } from 'apollo-server-express';
+
+import config from '@src/config';
 import ApolloServerOptions from '@src/graphql';
+import app from '@src/rest';
 
-// GRAPHQL HANDLER
+const print = console.log; // eslint-disable-line no-console,no-unused-vars,@typescript-eslint/no-unused-vars
+
 const apolloOptions = ApolloServerOptions();
+const server = new ApolloServer(apolloOptions);
 
-const cors = {
-  origin: '*',
-  methods: ['POST', 'GET'],
-  allowedHeaders: ['Content-Type', 'Origin', 'Accept'],
-};
+server.applyMiddleware({ app });
 
-const apolloServer = new ApolloServer(apolloOptions);
-
-export const gqlhandler = apolloServer.createHandler({ cors });
+if (process.env.NODE_ENV !== 'test') {
+  app.listen({ port: config.port }, () => {
+    print(`Server running on port ${config.port} ...`);
+    print('Press Ctrl+C to quit.');
+  });
+}

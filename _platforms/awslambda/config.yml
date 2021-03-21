@@ -56,7 +56,7 @@ jobs:
           command: NODE_ENV=development yarn install
       - run:
           nane: Build result to dist folder
-          command: ./run build --mode production
+          command: ./run build --stage uat
       - run:
           name: Deploy to UAT
           command: ./run deploy-uat
@@ -82,7 +82,7 @@ jobs:
           command: NODE_ENV=development yarn install
       - run:
           nane: Build result to dist folder
-          command: ./run build --mode production
+          command: ./run build --stage prod
       - run:
           name: Deploy to PRODUCTION
           command: ./run deploy

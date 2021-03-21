@@ -1,5 +1,5 @@
 #!/bin/sh
-# AWS Lambda helper script
+# Heroku helper script
 
 APP_NAME=myapi
 NET_NAME=bridge1
@@ -30,9 +30,7 @@ app_init() {
   yarn init -y
   # add expressjs and graphql
   APPDEPS="ajv ajv-formats lodash moment-timezone chance graphql 
-    express apollo-server-express sequelize pg jwt-simple axios
-    apollo-server-lambda aws-lambda serverless-http"
-  # aws-serverless-express
+    express apollo-server-express sequelize pg jwt-simple axios"
 
   yarn add $APPDEPS
 
@@ -42,8 +40,7 @@ app_init() {
     eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin \
     prettier eslint-plugin-prettier eslint-config-prettier \
     jest ts-jest @types/jest supertest @types/supertest jest-transform-graphql \
-    sequelize-cli @types/sequelize \
-    serverless serverless-offline serverless-domain-manager serverless-webpack
+    sequelize-cli @types/sequelize
   
   update_package_json
 }
@@ -92,15 +89,20 @@ app_start() {
   fi
 
   # run node file
-  yarn sls offline start --stage dev
+  yarn webpack --watch
 }
 
 
 app_build() {
   echo "Building"
-  yarn sls package $*
+  yarn webpack $*
 }
 
+
+app_buildtest() {
+  # Run the bundle that was created with ./run build command
+  node dist/server.js
+}
 
 app_test() {
   yarn jest --env=node --colors --coverage ./src
@@ -112,27 +114,68 @@ app_sequelize() {
 }
 
 
+app_deploy_get_sshkey() {
+  unzip -P $HEROKU_SSH_KEY_PASS ../deploy_key.zip deploy_rsa
+}
+
+
+heroku_deployer() {
+ DEPS=$(echo "const fs = require('fs'), PKG='package.json', pkg = JSON.parse(fs.readFileSync(PKG, 'utf8'))
+console.log(JSON.stringify(pkg.dependencies,null,2))
+" | node -)
+
+  if [ -d ./.deploy ]; then rm -rf ./.deploy; fi
+  mkdir ./.deploy
+  cd ./.deploy
+
+  app_deploy_get_sshkey
+
+  git init
+  git config user.email "deployer@example.com"
+  git config user.name "Deployer"
+  git checkout -b main
+  # the first parameter should be $HEROKU_SSH_GIT_UAT
+  git remote add heroku $1
+  sleep 1
+  GIT_SSH_COMMAND="ssh -i ./deploy_rsa -o 'StrictHostKeyChecking no'" git pull heroku main
+  sleep 2
+  rm -rf data/ server.js
+  cp -R ../dist/* .
+
+  echo "{
+  \"name\": \"api\",
+  \"version\": \"1.0.0\",
+  \"main\": \"server.js\",
+  \"dependencies\": $DEPS,
+  \"scripts\": {
+    \"start\": \"node server.js\"
+  }
+}" > ./package.json
+  echo -e "node_modules/\ndeploy_rsa" > ./.gitignore
+
+  git add * .gitignore
+  git add data/
+  git commit -m "deploy commit"
+
+  GIT_SSH_COMMAND="ssh -i ./deploy_rsa -o 'StrictHostKeyChecking no'" git push --set-upstream heroku main
+  cd ..
+  rm -rf ./.deploy
+}
+
+
 app_deploy_uat() {
-  echo "Deploying to production"
-  yarn sls config credentials --provider aws --profile profile-serverless --key $AWS_ACCESS_KEY_ID --secret $AWS_SECRET_ACCESS_KEY
-  yarn sls deploy --stage uat --package ./.serverless
+  echo "Deploying to UAT"
+  heroku_deployer $HEROKU_SSH_GIT_UAT
+  echo "Sent to Heroku"  
 }
 
 
 app_deploy_prod() {
   echo "Deploying to production"
-  yarn sls config credentials --provider aws --profile profile-serverless --key $AWS_ACCESS_KEY_ID --secret $AWS_SECRET_ACCESS_KEY
-  yarn sls deploy --stage prod --package ./.serverless
+  heroku_deployer $HEROKU_SSH_GIT_PROD
+  echo "Sent to Heroku"
 }
 
-app_get_serverless_forceincludes(){
-  echo "const fs = require('fs'), PKG='package.json', pkg = JSON.parse(fs.readFileSync(PKG, 'utf8'));
-  const print=console.log;
-  const packages=Object.keys(pkg.dependencies);
-  const exclusions=['aws-lambda'];
-  packages.forEach(item => {if (exclusions.indexOf(item) < 0) print('        - ' + item)})
-  " | node -
-}
 
 app_debug() {
   DEPS=$(echo "const fs = require('fs'), PKG='package.json', pkg = JSON.parse(fs.readFileSync(PKG, 'utf8'));
@@ -156,6 +199,7 @@ if [ "$1" = "start" ]; then app_start; exit; fi
 if [ "$1" = "stop" ]; then app_stop; exit; fi
 
 if [ "$1" = "build" ]; then shift 1; app_build $*; exit; fi
+if [ "$1" = "build-test" ]; then app_buildtest; exit; fi
 
 if [ "$1" = "test" ]; then app_test; exit; fi
 if [ "$1" = "lint" ]; then yarn lint; exit; fi
@@ -164,7 +208,6 @@ if [ "$1" = "deploy" ]; then app_deploy_prod; exit; fi
 if [ "$1" = "deploy-uat" ]; then app_deploy_uat; exit; fi
 
 if [ "$1" = "sq" ]; then shift 1; app_sequelize $*; exit; fi
-if [ "$1" = "get-includes" ]; then app_get_serverless_forceincludes; exit; fi
 
 if [ "$1" = "debug" ]; then app_debug; exit; fi
 
