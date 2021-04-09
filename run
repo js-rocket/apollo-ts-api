@@ -47,8 +47,8 @@ app_init() {
 
 
 app_reset() {
-  rm -rf ./node_modules ./dist
-  rm package.json yarn.lock package-lock.json yarn-error.log
+  rm -rf ./node_modules ./dist ||:
+  rm package.json yarn.lock package-lock.json yarn-error.log ||:
 }
 
 
