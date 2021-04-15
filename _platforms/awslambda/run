@@ -92,7 +92,7 @@ app_start() {
   fi
 
   # run node file
-  yarn sls offline start --stage dev
+  yarn sls offline start --stage dev --allowCache
 }
 
 
